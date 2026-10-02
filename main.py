@@ -3,9 +3,32 @@ import webbrowser
 import pyttsx3
 import musicLibrary
 import requests
+import os
+from openai import OpenAI
+import pyautogui
+from datetime import datetime
+from pathlib import Path
+import sys
+
 
 recognizer=sr.Recognizer()
 newsapi="3390b364304a4ff99a78afc53fc4f439"
+
+
+def aiProcess(command):
+    client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+    )
+
+    completion = client.chat.completions.create(
+    model="openai/gpt-oss-20b",
+    messages=[
+        {"role": "user", "content": command}
+    ]
+    )
+
+    return  completion.choices[0].message.content
 
 def speak(text):
     print("Speaking:", text)
@@ -26,6 +49,12 @@ def processCommand(c):
         song=c.lower().split(" ")[1]
         link=musicLibrary.music[song]
         webbrowser.open(link)
+   
+    elif "stop" in c.lower():
+        speak("thank you sir")
+        sys.exit()
+
+    # your other commands...
 
     elif "news" in c.lower():
         print("News command detected")
@@ -51,7 +80,34 @@ def processCommand(c):
 
             if title:
                 speak(title)
+    elif "screenshot" in c.lower():
 
+        screenshot_folder = Path.home() / "OneDrive" / "Desktop" / "Jarvis screenshot"
+
+        filename = datetime.now().strftime("screenshot_%Y%m%d_%H%M%S.png")
+
+        screenshot_path = screenshot_folder / filename
+
+        pyautogui.screenshot().save(screenshot_path)
+
+        speak("Screenshot taken successfully")
+        print(f"Screenshot saved to: {screenshot_path}")
+
+
+
+    elif "time" in c.lower():
+        current_time = datetime.now().strftime("%I:%M %p")
+        speak(f"The current time is {current_time}")
+
+    elif "date" in c.lower():
+        current_date = datetime.now().strftime("%d %B %Y")
+        speak(f"Today's date is {current_date}")
+    else:
+            #let openai handle the request
+            output = aiProcess(c)
+            speak(output) 
+    
+    
 
 if __name__=="__main__":
     speak("Good evening sir how can i help you....")
